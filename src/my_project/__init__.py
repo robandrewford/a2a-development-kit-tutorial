@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 import asyncclick as click
 from common.types import AgentSkill, AgentCapabilities, AgentCard
@@ -25,7 +26,7 @@ async def main(host, port, google_adk_project_id, google_adk_location, google_ad
     outputModes=["text"],
   )
   logging.info(skill)
-  capabilities = AgentCapabilities(streaming=False)
+  capabilities = AgentCapabilities(streaming=True)
   agent_card = AgentCard(
     name="Echo Agent",
     description="This agent echos the input given",
@@ -48,7 +49,7 @@ async def main(host, port, google_adk_project_id, google_adk_location, google_ad
     host=host,
     port=port,
   )
-  server.start()
+  await server.start()
 
 if __name__ == "__main__":
   main()

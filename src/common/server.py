@@ -29,6 +29,8 @@ class A2AServer:
     async def execute(self, body: dict):
         return await self.task_manager.execute_task(body)
 
-    def start(self):
+    async def start(self):
         logger.info(f"Starting server at http://{self.host}:{self.port}")
-        uvicorn.run(self.app, host=self.host, port=self.port)
+        config = uvicorn.Config(self.app, host=self.host, port=self.port)
+        server = uvicorn.Server(config)
+        await server.serve()
