@@ -1,0 +1,30 @@
+[project]
+name = "my-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "zhangcheng", email = "zh.milo@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "a2a-sdk",
+    "asyncclick>=8.1.8",
+    "click>=8.1.8",
+    "dotenv>=0.9.9",
+    "langchain>=0.3.25",
+    "google-cloud-aiplatform>=1.58.0",
+    "langgraph>=0.4.1",
+]
+
+[project.scripts]
+my-project = "my_project:main"
+google-a2a-cli = "hosts.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+a2a-sdk = { git = "https://github.com/a2aproject/a2a-python" }
+a2a-samples = { git = "https://github.com/a2aproject/a2a-samples", subdirectory = "samples/python" }
