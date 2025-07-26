@@ -1,10 +1,9 @@
 import asyncio
-from typing import AsyncIterable, Union
+from typing import AsyncIterable
 
 from common.task_manager import InMemoryTaskManager
 from common.types import (
   Artifact,
-  JSONRPCResponse,
   Message,
   SendTaskRequest,
   SendTaskResponse,
@@ -13,7 +12,6 @@ from common.types import (
   Task,
   TaskState,
   TaskStatus,
-  TaskStatusUpdateEvent,
 )
 from my_project.agent import create_google_adk_agent, run_google_adk_agent
 
@@ -51,96 +49,27 @@ class MyAgentTaskManager(InMemoryTaskManager):
     # Send the response
     return SendTaskResponse(id=request.id, result=task)
 
-  async def _stream_3_messages(self, request: SendTaskStreamingRequest):
-    task_id = request.params.id
-    received_text = request.params.message.parts[0].text
-
-    text_messages = ["one", "two", "three"]
-    for text in text_messages:
-      parts = [
-        {
-          "type": "text",
-          "text": f"{received_text}: {text}",
-        }
-      ]
-      message = Message(role="agent", parts=parts)
-      # is_last = text == text_messages[-1]
-      task_state = TaskState.WORKING
-      # task_state = TaskState.COMPLETED if is_last else TaskState.WORKING
-      task_status = TaskStatus(
-        state=task_state,
-        message=message
-      )
-      task_update_event = TaskStatusUpdateEvent(
-        id=request.params.id,
-        status=task_status,
-        final=False,
-      )
-      await self.enqueue_events_for_sse(
-        request.params.id,
-        task_update_event
-      )
-    ask_message = Message(
-      role="agent",
-      parts=[
-        {
-          "type": "text",
-          "text": "Would you like more messages? (Y/N)"
-        }
-      ]
-    )
-    task_update_event = TaskStatusUpdateEvent(
-      id=request.params.id,
-      status=TaskStatus(
-        state=TaskState.INPUT_REQUIRED,
-        message=ask_message
-      ),
-      final=True,
-    )
-    await self.enqueue_events_for_sse(
-      request.params.id,
-      task_update_event
-    )
-
   async def on_send_task_subscribe(
     self,
     request: SendTaskStreamingRequest
-  ) -> AsyncIterable[SendTaskStreamingResponse] | JSONRPCResponse:
-    task_id = request.params.id
-    is_new_task = task_id in self.tasks
-    # Upsert a task stored by InMemoryTaskManager
-    await self.upsert_task(request.params)
-
-    received_text = request.params.message.parts[0].text
-    sse_event_queue = await self.setup_sse_consumer(task_id=task_id)
-    if not is_new_task and received_text == "N":
-      task_update_event = TaskStatusUpdateEvent(
-        id=request.params.id,
-        status=TaskStatus(
-          state=TaskState.COMPLETED,
-          message=Message(
-            role="agent",
-            parts=[
-              {
-                "type": "text",
-                "text": "All done!"
-              }
-            ]
-          )
-        ),
-        final=True,
-      )
-      await self.enqueue_events_for_sse(
-        request.params.id,
-        task_update_event,
-      )
-    else:
-      asyncio.create_task(self._stream_3_messages(request))
-
-    return self.dequeue_events_for_sse(
-      request_id=request.id,
-      task_id=task_id,
-      sse_event_queue=sse_event_queue,
+  ) -> AsyncIterable[SendTaskStreamingResponse]:
+    # This is a simplified example of streaming.
+    # In a real-world scenario, you would handle the task and session management.
+    for i in range(3):
+        yield SendTaskStreamingResponse(
+            id=request.id,
+            result={
+                "status": "working",
+                "message": f"Streaming message {i+1}"
+            }
+        )
+        await asyncio.sleep(1)
+    yield SendTaskStreamingResponse(
+        id=request.id,
+        result={
+            "status": "completed",
+            "message": "Streaming complete"
+        }
     )
 
   async def _update_task(

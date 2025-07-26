@@ -3,7 +3,7 @@
 [A2A development kit tutorial Source Code](https://github.com/sing1ee/python-a2a-tutorial)
 
 ## Table of Contents
-- [A2A-development-kit-tutorial Source Code](#python-a2a-tutorial-source-code)
+- [A2A-development-kit-tutorial](#a2a-development-kit-tutorial)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Set up Your Environment](#set-up-your-environment)
@@ -23,9 +23,6 @@
   - [Interacting With Your A2A Server](#interacting-with-your-a2a-server)
   - [Adding Agent Capabilities](#adding-agent-capabilities)
     - [Streaming](#streaming)
-  - [Using a Local Ollama Model](#using-a-local-ollama-model)
-    - [Requirements](#requirements)
-    - [Integrating Ollama into our A2A server](#integrating-ollama-into-our-a2a-server)
 
 ## Introduction
 
@@ -69,8 +66,6 @@ Once you've set up your environment, you can run the A2A server with the followi
 ```bash
 uv run my-project
 ```
-
->>>>>>> Stashed changes
 
 ## Agent Skills
 
@@ -382,128 +377,3 @@ class MyAgentTaskManager(InMemoryTaskManager):
 ```
 
 Restart your A2A server to pickup the new changes. You can test the streaming functionality with a client that supports Server-Sent Events (SSE).
-
-## Using a Local Ollama Model
-
-Now we get to the exciting part. We're going to add AI to our A2A server.
-
-In this tutorial, we'll be setting up a local Ollama model and integrating it with our A2A server.
-
-### Requirements
-
-We'll be installing `ollama`, `langchain` as well as downloading an ollama model.
-
-1. Download [ollama](https://ollama.com/download)
-2. Run an ollama server:
-
-```bash
-ollama serve
-```
-
-3. Download a model from [this list](https://ollama.com/search). We'll be using `qwen:0.5b` as it's small and easy to run.
-
-```bash
-ollama pull qwen:0.5b
-```
-
-4. Install `langchain`:
-
-```bash
-uv add langchain langchain-ollama langgraph
-```
-
-### Integrating Ollama into our A2A server
-
-First open up `src/my_project/__init__.py`:
-
-```python
-# ...
-
-@click.command()
-@click.option("--host", default="localhost")
-@click.option("--port", default=10002)
-@click.option("--ollama-host", default="http://127.0.0.1:11434")
-@click.option("--ollama-model", default=None)
-def main(host, port, ollama_host, ollama_model):
-  # ...
-  task_manager = MyAgentTaskManager(
-    ollama_host=ollama_host,
-    ollama_model=ollama_model,
-  )
-  # ..
-```
-
-Now let's add AI functionality in `src/my_project/agent.py`:
-
-```python
-from langchain_ollama import ChatOllama
-from langgraph.prebuilt import create_react_agent
-from langgraph.graph.graph import CompiledGraph
-
-def create_ollama_agent(ollama_base_url: str, ollama_model: str):
-  ollama_chat_llm = ChatOllama(
-    base_url=ollama_base_url,
-    model=ollama_model,
-    temperature=0.2
-  )
-  agent = create_react_agent(ollama_chat_llm, tools=[])
-  return agent
-
-async def run_ollama(ollama_agent: CompiledGraph, prompt: str):
-  agent_response = await ollama_agent.ainvoke(
-    {"messages": [("user", prompt)]}
-  )
-  message = agent_response["messages"][-1].content
-  return str(message)
-```
-
-Finally let's call our ollama agent from `src/my_project/task_manager.py`:
-
-```python
-# ...
-from my_project.agent import create_ollama_agent, run_ollama
-
-class MyAgentTaskManager(InMemoryTaskManager):
-  def __init__(
-    self,
-    ollama_host: str,
-    ollama_model: typing.Union[None, str]
-  ):
-    super().__init__()
-    if ollama_model is not None:
-      self.ollama_agent = create_ollama_agent(
-        ollama_base_url=ollama_host,
-        ollama_model=ollama_model
-      )
-    else:
-      self.ollama_agent = None
-
-  async def execute_task(self, body: dict):
-    # ...
-    input_text = body.get("input")
-    if self.ollama_agent is not None and input_text:
-      response_text = await run_ollama(ollama_agent=self.ollama_agent, prompt=input_text)
-      return {"status": "completed", "output": response_text}
-
-    return {"status": "completed", "output": body}
-
-  # ...
-```
-
-Let's test it out!
-
-First rerun our A2A server with the ollama model:
-
-```bash
-uv run my-project --ollama-model qwen:0.5b
-```
-
-And then send a request using `curl`:
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"execute","params":{"input":"hello"},"id":1}' http://localhost:10002/execute
-```
-
-You should see a response from the AI model!
-
-Congratulations! You now have an A2A server generating responses using an AI model!

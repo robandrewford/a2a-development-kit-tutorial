@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @click.option("--google-adk-project-id", default=None)
 @click.option("--google-adk-location", default=None)
 @click.option("--google-adk-model-id", default=None)
-async def main(host, port, google_adk_project_id, google_adk_location, google_adk_model_id):
+async def amain(host, port, google_adk_project_id, google_adk_location, google_adk_model_id):
   skill = AgentSkill(
     id="my-project-echo-skill",
     name="Echo Tool",
@@ -51,5 +51,6 @@ async def main(host, port, google_adk_project_id, google_adk_location, google_ad
   )
   await server.start()
 
-if __name__ == "__main__":
-  main()
+def main():
+  amain(_anyio_backend="asyncio")
+
