@@ -29,7 +29,7 @@
 
 ## Introduction
 
-In this tutorial, you will build a simple echo A2A server using Python. This barebones implementation will show you all the features A2A has to offer. Following this tutorial, you will be able to add agent functionality using Ollama or Google's Agent Development Kit.
+In this tutorial, you will build a simple echo A2A server using Python. This barebones implementation will show you all the features A2A has to offer. Following this tutorial, you will be able to add agent functionality using Google's Agent Development Kit.
 
 **What you'll learn:**
 - The basic concepts behind A2A
@@ -48,9 +48,8 @@ In this tutorial, you will build a simple echo A2A server using Python. This bar
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/sing1ee/python-a2a-tutorial.git
-    cd python-a2a-tutorial
-    ```
+    git clone https://github.com/robandrewford/a2a-development-kit-tutorial
+    cd a2a-development-kit-tutorial
 
 2.  **Create and activate a virtual environment:**
     ```bash
